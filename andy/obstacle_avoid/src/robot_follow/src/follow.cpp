@@ -44,10 +44,14 @@ bool Turtlebot3Drive::init()
   // initialize ROS parameter
   std::string cmd_vel_topic_name = nh_.param<std::string>("cmd_vel_topic_name", "");
 
+  robot_width = nh_.param<float>("robot_width", 0.14);
+  
+	k = 2 * robot_width/0.14; //the constant of (ratio_width * obstacle's distant)
+
   // initialize publishers
   cmd_vel_pub_   = nh_.advertise<geometry_msgs::Twist>(cmd_vel_topic_name, 10);
   // initialize subscribers
-  depth_scan_sub_  = nh_.subscribe("camera_depth/depth_camera/depth_image", 10, &Turtlebot3Drive::depthScanMsgCallBack, this);
+  depth_scan_sub_  = nh_.subscribe("camera_depth/depth_camera/depth_image", 10, &Turtlebot3Drive::depthScanMsgCallBack, this);  
 
   return true;
 }
@@ -74,7 +78,9 @@ void Turtlebot3Drive::depthScanMsgCallBack(const sensor_msgs::Image::ConstPtr &m
        uint8_t uc[] ={b0,b1,b2,b3};
        memcpy(&f, &uc, sizeof(f)); 
        if (f!=f)
-         dis[i][j]=-1;
+         dis[i][j] = 0.5;
+			 else if (f <0.3)
+				 dis[i][j] = 0.3;
        else
 	       dis[i][j] = f;
    }
@@ -90,6 +96,7 @@ void Turtlebot3Drive::updatecommandVelocity(double linear, double angular)
 
   cmd_vel_pub_.publish(cmd_vel);
 }
+/**
 uint8_t find_distance(float x)
 {
 	if(x >= 0.5 && x <= 1)
@@ -101,7 +108,23 @@ uint8_t find_distance(float x)
 	else
 		return VERY_CLOSE;
 }
+***/
 
+//finally use the minimum of the flag to avoid the closest obstacle
+float check_obstacle(float depth, int i, float robot_width)
+{
+	float dist_flag;
+	float pixel_length = depth/0.5/WIDTH; //the length between per pixel
+	float avoid_width = robot_width / pixel_length ;//the range that need to avoid 
+	
+	if(depth >= 2)
+		dist_flag = 99;
+	else if((float)i >= (WIDTH - avoid_width)/2 && (float)i <= (WIDTH + avoid_width)/2 )//the obastacle is on the path
+		dist_flag = depth;
+	else//the obsatacle is not on the path
+		dist_flag = 99;
+	return dist_flag;
+}
 
 /*******************************************************************************
 * Control Loop function
@@ -121,18 +144,72 @@ bool Turtlebot3Drive::controlLoop()
 	listener.lookupTransform(base_footprint, target_base_frame,	ros::Time(0), transform);
 	double dist = sqrt(pow(transform.getOrigin().x(), 2) +
 										 pow(transform.getOrigin().y(), 2));
-	ROS_INFO("distance %lf", dist);
+//	ROS_INFO("distance %lf", dist);
 	static double ang;
 	static double vel;
-	int h = HEIGHT/2;
+	float dist_flag[WIDTH];
 	
+	int h = HEIGHT/2;
+/****
+	for(int i = 0; i < WIDTH ;i++)
+	{
+		printf("%.1f", dis[h][i]);
+	}
+		printf("-------------------------------------\n");
+****/
+
 	if (dist <= 0.3)
 	{
 		ang = 0;
 		vel = 0;
 		ROS_INFO("ARRIVED");
-		goto update;
+		updatecommandVelocity(vel, ang);
+		return true;
 	}
+	for (int i = 1; i < WIDTH ; i++)
+	{
+		dist_flag[i] = check_obstacle(dis[h][i], i, robot_width);
+	}
+	float min_flag = 99;
+	int min_index;
+	for (int i = 1; i < WIDTH ; i++)
+	{
+		if(dist_flag[i] < min_flag)
+		{
+			min_flag = dist_flag[i];
+			min_index = i;
+		}
+	}
+//use the depth be the ratio of speed
+	printf("dist:%f min:%f\n", dist, min_flag);
+
+
+
+	if (min_flag == 99||dist < min_flag)//go straight and find target
+	{	
+  	ang = 0.7 * ANGULAR_VELOCITY * atan2(transform.getOrigin().y(),
+	  																		transform.getOrigin().x());
+		vel = LINEAR_VELOCITY * 3;
+		updatecommandVelocity(vel, ang);
+	}
+
+	else if (min_index <= WIDTH/2)//obstacle is on the left side
+	{
+		ang = -1 * ANGULAR_VELOCITY / dis[h][min_index];//turn right
+		vel = LINEAR_VELOCITY * dis[h][min_index];
+		updatecommandVelocity(vel, ang);
+	}
+	else if (min_index > WIDTH/2)//right side
+	{	
+		ang = 1 * ANGULAR_VELOCITY / dis[h][min_index];//turn left
+		vel = LINEAR_VELOCITY * dis[h][min_index];
+		updatecommandVelocity(vel, ang);
+	}
+	printf("vel:%f ang:%f\n", vel, ang);
+
+
+
+/***************************
   for (int i = (WIDTH/32)*12; i < WIDTH/2; i++)//left side
  	{
  		if(find_distance(dis[h][i]) == VERY_CLOSE)
@@ -199,7 +276,7 @@ bool Turtlebot3Drive::controlLoop()
 
 update:
 		updatecommandVelocity(vel,ang);
-  
+************************/
 	return true;
 }
 

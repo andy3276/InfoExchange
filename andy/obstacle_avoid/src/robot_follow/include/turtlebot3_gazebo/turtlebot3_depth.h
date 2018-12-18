@@ -21,29 +21,21 @@
 
 #include <ros/ros.h>
 
-#include <sensor_msgs/LaserScan.h>
+
 #include <sensor_msgs/Image.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 
-#define DEG2RAD (M_PI / 180.0)
-#define RAD2DEG (180.0 / M_PI)
+//camera's resolution
+#define WIDTH 640
+#define HEIGHT 480
 
-#define WIDTH 64
-#define HEIGHT 48
+#define LINEAR_VELOCITY  0.12
+#define ANGULAR_VELOCITY 0.6
 
-#define CENTER 0
-#define LEFT   1
-#define RIGHT  2
+#define SPEED_RATIO 1
+#define ANGULAR_RATIO 1
 
-#define LINEAR_VELOCITY  0.2
-#define ANGULAR_VELOCITY 1
-
-#define GET_TB3_DIRECTION 0
-#define TB3_DRIVE_FORWARD 1
-#define TB3_RIGHT_TURN    2
-#define TB3_LEFT_TURN     3
-#define TB3_TARGET_TURN   4
 
 #define VERY_CLOSE 0
 #define CLOSE 1
@@ -81,10 +73,8 @@ class Turtlebot3Drive
 
   float dis[HEIGHT][WIDTH];  
 
-  double scan_data_[3] = {0.0, 0.0, 0.0};
-
-  double tb3_pose_;
-  double prev_tb3_pose_;
+  float robot_width;
+  float k;
 
   // Function prototypes
   void updatecommandVelocity(double linear, double angular);

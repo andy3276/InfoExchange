@@ -14,7 +14,7 @@
   </include>
 
 	<group ns = "ns1">
-		<param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/fake_turtlebot3_burger.urdf.xacro" />
+		<param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/depth_turtlebot3_burger.urdf.xacro" />
 		<node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"  args="-urdf -model turtlebot3_burger -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description" />
 
 		<param name="odom_frame" value="ns1/odom"/>
@@ -31,11 +31,12 @@
 		<param name="taget_base_frame" value="target/base_footprint"/>
   	<param name="cmd_vel_topic_name" value="$(arg cmd_vel)"/>
 		<param name="base_footprint" value="$(arg ns)/base_footprint" />
+		<param name="robot_width" value="0.14" />
   	<node name="$(arg name)_follow" pkg="robot_follow" type="follow" required="true" output="screen"/>
 	</group>
 
 	<group ns = "target">
-		<param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/fake_turtlebot3_burger.urdf.xacro" />
+		<param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/depth_turtlebot3_burger.urdf.xacro" />
 		<node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"  args="-urdf -model target -x 0 -y 0 -z 0 -param robot_description" />
 	</group>
 
