@@ -1,7 +1,7 @@
 README.md
 ===
 > last updated on 20181201
-> 
+> By Alice
 ## Environment
 using `ros-kinetic` version
 install `ros-control` and `ros-controller` packages
