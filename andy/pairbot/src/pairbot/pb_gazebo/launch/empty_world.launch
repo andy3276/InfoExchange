@@ -45,7 +45,9 @@
         <!--<remap from="joint_states" to="pairbot/joint_states"/>-->
     </node>
   <!-- ros_control eng launch file -->
-    <include file="$(find pb_control)/launch/pb_control.launch" />
+    <include file="$(find pb_control)/launch/pb_control.launch">
+			<arg name="namespace" value="tracer"/>
+		</include>
 	</group>
 
 
