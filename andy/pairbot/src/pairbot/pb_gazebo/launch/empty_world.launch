@@ -44,10 +44,11 @@
 			<param name="publish_frequency" type="double" value="50.0" />
         <!--<remap from="joint_states" to="pairbot/joint_states"/>-->
     </node>
+  <!-- ros_control eng launch file -->
+    <include file="$(find pb_control)/launch/pb_control.launch" />
 	</group>
 
 
-  <!-- ros_control eng launch file -->
-  <include file="$(find pb_control)/launch/pb_control.launch" />
+
 
 </launch>
